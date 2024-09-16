@@ -27,6 +27,24 @@ export default function SmpForm() {
     account: accounts[0],
   };
 
+
+  const handleReset = () => {
+    instance.acquireTokenSilent(accessTokenRequest).then(res => {
+      fetch("/api/smp/reset-details", {
+        method: "PUT",
+        headers: {
+          "X-Alloc8-IDToken": res.idToken,
+        }
+      }).then(res => {
+        if (res.status == 200) {
+          alert("Deleted your record successfully, you can submit again now");
+        } else {
+          alert("Could not find your record to delete, it does not exist in the database");
+        }
+      });
+    });
+  }
+
   const onSubmit = (formData) => {
     console.log(formData);
     instance.acquireTokenSilent(accessTokenRequest).then((res) => {
@@ -242,6 +260,23 @@ export default function SmpForm() {
 
         <div className="flex items-center justify-between gap-4 input-container">
           <label className="w-1/3">
+            CPI<span className="text-red-500">*</span>
+          </label>
+          <textarea
+            {...register("cpi", {
+              required: "CPI is required (Enter 10 if you are a fresher)",
+            })}
+            className={`overflow-auto mt-2 border-2 border-gray-300 focus:border-blue-500 px-4 focus:outline-none w-2/3 resize-none h-[75px] ${
+              errors.cpi ? "border-red-500" : ""
+            }`}
+          />
+          {errors.cpi && (
+            <p className="text-red-500">{errors.cpi.message}</p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-4 input-container">
+          <label className="w-1/3">
             Remarks<span className="text-red-500">*</span>
           </label>
           <textarea
@@ -261,15 +296,20 @@ export default function SmpForm() {
           type="submit"
           className="inline-flex items-center justify-center text-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300 bg-black text-white hover:bg-gray-800 h-12 px-6 rounded-md w-full md:w-auto mx-auto"
         >
-          Reset Data
-        </Button>
-        <Button
-          type="submit"
-          className="inline-flex items-center justify-center text-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300 bg-black text-white hover:bg-gray-800 h-12 px-6 rounded-md w-full md:w-auto mx-auto"
-        >
           Submit
         </Button>
       </form>
+      <br />
+      <div
+        className="flex flex-col gap-6 text-lg"
+      >
+        <button
+          onClick={handleReset}
+          className="inline-flex items-center justify-center text-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300 bg-black text-white hover:bg-gray-800 h-12 px-6 rounded-md w-full md:w-auto mx-auto"
+        >
+          Reset Data
+        </button>
+      </div>
     </div>
   );
 }

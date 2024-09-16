@@ -29,6 +29,7 @@ async function getDetails(req, res) {
     culturalHobbies,
     nature,
     futureInterests,
+    cpi,
     remarks
   } = req.body;
   console.log(req.body);
@@ -60,6 +61,7 @@ async function getDetails(req, res) {
         culturalHobbies,
         nature,
         futureInterests,
+        cpi,
         remarks
       },
     });
@@ -83,7 +85,7 @@ async function resetDetails(req, res) {
         rollnum,
       },
     });
-    res.status(201).json({
+    res.status(200).json({
       message:
         "Your Details have been deleted !",
       smpDetail,

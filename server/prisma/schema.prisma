@@ -60,5 +60,6 @@ model smpDetails{
   culturalHobbies String
   nature String
   futureInterests String
+  cpi String
   remarks String
 }

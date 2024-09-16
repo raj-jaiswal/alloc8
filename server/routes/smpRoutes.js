@@ -48,7 +48,7 @@ router.use(async (req, res, next) => {
 });
 
 router.post("/submit-details",smpController.getDetails);
-router.post("/reset-details",smpController.resetDetails);
+router.put("/reset-details",smpController.resetDetails);
 
 export default router;
 /* vi: set et sw=2: */
