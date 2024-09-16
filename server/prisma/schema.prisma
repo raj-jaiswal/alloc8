@@ -60,4 +60,5 @@ model smpDetails{
   culturalHobbies String
   nature String
   futureInterests String
+  remarks String
 }

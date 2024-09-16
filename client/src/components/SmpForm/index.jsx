@@ -43,7 +43,7 @@ export default function SmpForm() {
         if (res.status == 201) {
           navigate("/waiting");
         } else {
-          alert("Error in submitting the form");
+          res.json().then(res => alert("Error in submitting the form: " + res.error));
         }
       });
     });
@@ -240,6 +240,29 @@ export default function SmpForm() {
           )}
         </div>
 
+        <div className="flex items-center justify-between gap-4 input-container">
+          <label className="w-1/3">
+            Remarks<span className="text-red-500">*</span>
+          </label>
+          <textarea
+            {...register("remarks", {
+              required: "Remarks are required (Enter 'None' if no remarks)",
+            })}
+            className={`overflow-auto mt-2 border-2 border-gray-300 focus:border-blue-500 px-4 focus:outline-none w-2/3 resize-none h-[75px] ${
+              errors.remarks ? "border-red-500" : ""
+            }`}
+          />
+          {errors.remarks && (
+            <p className="text-red-500">{errors.remarks.message}</p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          className="inline-flex items-center justify-center text-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300 bg-black text-white hover:bg-gray-800 h-12 px-6 rounded-md w-full md:w-auto mx-auto"
+        >
+          Reset Data
+        </Button>
         <Button
           type="submit"
           className="inline-flex items-center justify-center text-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-neutral-950 dark:focus-visible:ring-neutral-300 bg-black text-white hover:bg-gray-800 h-12 px-6 rounded-md w-full md:w-auto mx-auto"

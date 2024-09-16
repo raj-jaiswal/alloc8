@@ -29,6 +29,7 @@ async function getDetails(req, res) {
     culturalHobbies,
     nature,
     futureInterests,
+    remarks
   } = req.body;
   console.log(req.body);
   try {
@@ -38,6 +39,16 @@ async function getDetails(req, res) {
     }
     motherTongue = arrayMotherTongue;
     // added to db
+    const detailExists = await prisma.smpDetails.findUnique({
+      where: {
+        rollnum,
+      },
+    });
+    if (detailExists != null) {
+      console.error(rollnum, " tried to submit again");
+      res.status(500).json({ error: "You have already submitted the form" });
+      return;
+    }
     const smpDetail = await prisma.smpDetails.create({
       data: {
         rollnum,
@@ -49,6 +60,7 @@ async function getDetails(req, res) {
         culturalHobbies,
         nature,
         futureInterests,
+        remarks
       },
     });
 
@@ -58,9 +70,28 @@ async function getDetails(req, res) {
       smpDetail,
     });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 }
-export default { getDetails };
+async function resetDetails(req, res) {
+  const rollnum = getRollNumber(req.auth.preferred_username);
+  try {
+    // added to db
+    const smpDetail = await prisma.smpDetails.delete({
+      where: {
+        rollnum,
+      },
+    });
+    res.status(201).json({
+      message:
+        "Your Details have been deleted !",
+      smpDetail,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+}
+export default { getDetails, resetDetails };
 /* vi: set et sw=2: */
