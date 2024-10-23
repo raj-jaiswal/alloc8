@@ -14,14 +14,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    host: true,
-    proxy: {
-      "/api": {
-        target: "http://13.127.148.249:80",
-        changeOrigin: true,
-        // secure: false,
-      },
-    },
-  },
 });
