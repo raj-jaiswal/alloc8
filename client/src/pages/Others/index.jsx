@@ -95,12 +95,16 @@ const StepperForm = ({
 };
 
 const Details = ({ onNext, onPrev, activeStep }) => {
+  const { instance } = useMsal();
+  const activeAccount = instance.getActiveAccount();
+  const idTokenClaims = activeAccount.idTokenClaims;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const form = e.target;
     const data = new FormData(form);
     const details = {
-      rollno: getRollNumber(),
+      rollno: getRollNumber(idTokenClaims),
       gender: data.get("gender"),
       batch: data.get("batch"),
     };
@@ -124,7 +128,7 @@ const Details = ({ onNext, onPrev, activeStep }) => {
         type="text"
         id="rollno"
         name="rollno"
-        value={getRollNumber().toUpperCase()}
+        value={getRollNumber(idTokenClaims).toUpperCase()}
         disabled={true}
       />
       <Label htmlFor="gender" className="mt-3">
@@ -296,17 +300,17 @@ const FloorAndRoom = ({
   hostel,
   studDetails,
 }) => {
+  const { instance } = useMsal();
+  const activeAccount = instance.getActiveAccount();
+  const idTokenClaims = activeAccount.idTokenClaims;
+
   const floors = Object.keys(data);
   const [floor, setFloor] = useState(0);
   const [loading, setLoading] = useState(false);
   // const [rooms, setRooms] = useState([]);
   const [roomData, setRoomData] = useState([]);
   const navigate = useNavigate();
-  const { accounts, instance } = useMsal();
 
-  const accessTokenRequest = {
-    account: accounts[0],
-  };
   const updateRooms = () => {
     if (
       !floor ||
@@ -326,76 +330,70 @@ const FloorAndRoom = ({
 
     console.log(postBody);
     setLoading(true);
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch("/api/nonfresher/room-status", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Alloc8-IDToken": res.idToken,
-        },
-        body: JSON.stringify(postBody),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setLoading(false);
-          console.log(data);
-          let rooms = data.rooms;
-          rooms.sort((a, b) => a.roomNum - b.roomNum);
-          setRoomData(data.rooms);
-        });
-    });
+    fetch("/api/nonfresher/room-status", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Alloc8-IDToken": activeAccount.idToken,
+      },
+      body: JSON.stringify(postBody),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setLoading(false);
+        console.log(data);
+        let rooms = data.rooms;
+        rooms.sort((a, b) => a.roomNum - b.roomNum);
+        setRoomData(data.rooms);
+      });
   };
   const [roommateCode, setRoommateCode] = useState("");
   const bookRoom = (roomId) => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch("/api/nonfresher/room-booking", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Alloc8-IDToken": res.idToken,
-        },
-        body: JSON.stringify({
-          studentId: getRollNumber(),
-          roomId: roomId,
-          roommateCode: roommateCode ? roommateCode : null,
-          name: getName(),
-          gender: studDetails.gender,
-          batch: studDetails.batch,
-        }),
-      }).then((res) => {
-        if (res.status == 200) {
-          navigate("/success");
-        } else {
-          res.json().then((data) => alert(data.error));
-        }
-      });
+    fetch("/api/nonfresher/room-booking", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Alloc8-IDToken": activeAccount.idToken,
+      },
+      body: JSON.stringify({
+        studentId: getRollNumber(idTokenClaims),
+        roomId: roomId,
+        roommateCode: roommateCode ? roommateCode : null,
+        name: getName(idTokenClaims),
+        gender: studDetails.gender,
+        batch: studDetails.batch,
+      }),
+    }).then((res) => {
+      if (res.status == 200) {
+        navigate("/success");
+      } else {
+        res.json().then((data) => alert(data.error));
+      }
     });
   };
   const getStudDetail = (rollnum) => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch(
-        "/api/nonfresher/allocated-details?" +
-          new URLSearchParams({
-            rollnum: rollnum,
-          }).toString(),
-        {
-          method: "GET",
-          headers: {
-            "X-Alloc8-IDToken": res.idToken,
-          },
+    fetch(
+      "/api/nonfresher/allocated-details?" +
+        new URLSearchParams({
+          rollnum: rollnum,
+        }).toString(),
+      {
+        method: "GET",
+        headers: {
+          "X-Alloc8-IDToken": activeAccount.idToken,
+        },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        if (data.error) {
+          return;
         }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          console.log(data);
-          if (data.error) {
-            return;
-          }
-          return data;
-        });
-    });
+        return data;
+      });
   };
   useEffect(() => {
     updateRooms();
@@ -568,15 +566,6 @@ const FloorAndRoom = ({
   );
 };
 const OthersRoomAllocPage = () => {
-  const { accounts, instance } = useMsal();
-  const accessTokenRequest = {
-    account: accounts[0],
-  };
-  useEffect(() => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      console.log(res);
-    });
-  }, []);
   const [available_rooms, setAvailableRooms] = useState({});
   let [activeStep, setActiveStep] = useState(0);
   const [hostel, setHostel] = useState("");

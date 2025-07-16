@@ -6,34 +6,24 @@ import { useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 const HomePage = () => {
+  console.log("chutmairke");
   const navigate = useNavigate();
 
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts } = useMsal();
   const { search } = useLocation();
   const query = new URLSearchParams(search);
-  console.log(query.get("pass"));
+  // console.log(query.get("pass"));
   // if (query.get("pass") != "HPBV4") {
   //   return <>Site under maintenance. Please wait for an official mail</>;
   // }
 
   useEffect(() => {
     if (isAuthenticated) {
-      let navigated = false;
-      let parts = accounts[0].username.split("_");
-      for (let part of parts) {
-        if ((part.startsWith("24") && !part.startsWith("2421"))
-        || (part.startsWith("23") && !part.startsWith("2321"))
-        || (part.startsWith("22") && !part.startsWith("2221"))) {
-          navigate("/smpform");
-          navigated = true;
-        }
-      }
-      if (!navigated) {
-        navigate("/success");
-      }
+      navigate("/success");
     }
   }, [isAuthenticated]);
+
   const initializeSignIn = () => {
     instance.loginRedirect();
   };

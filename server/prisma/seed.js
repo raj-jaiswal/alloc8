@@ -9,51 +9,11 @@ main()
     const data = new Set();
     for (let batch in available_rooms) {
       for (let gender in available_rooms[batch]) {
-        for (let hostel in available_rooms[batch][gender]) {
-          console.log("adding for", batch, gender, hostel);
+        let capacity = available_rooms[batch][gender]["capacity"];
+        for (let hostel in available_rooms[batch][gender]["hostels"]) {
+          console.log("adding for", batch, gender, hostel, capacity);
           for (let floor in available_rooms[batch][gender][hostel]) {
             for (let room of available_rooms[batch][gender][hostel][floor]) {
-              let hardcodedBatch = null;
-              let capacity = 2;
-              if (hostel.startsWith("asima") && batch == "btech23") {
-                capacity = 3;
-              }
-              if (batch == "btech21") {
-                capacity = 1;
-              }
-              if (
-                [
-                  "phd14",
-                  "phd15",
-                  "phd16",
-                  "phd17",
-                  "phd18",
-                  "phd19",
-                  "phd20",
-                  "phd21",
-                ].includes(batch) ||
-                (batch == "phd21" && gender == "male")
-              ) {
-                capacity = 1;
-                hardcodedBatch = "phd14to20male";
-              }
-
-              if (
-                [
-                  "phd17",
-                  "phd18",
-                  "phd19",
-                  "phd20",
-                  "phd21",
-                  "phd22",
-                  "phd23",
-                ].includes(batch) &&
-                gender == "female"
-              ) {
-                capacity = 1;
-                hardcodedBatch = "phd17to23female";
-              }
-
               //   console.log(
               //     `${hostel}-${
               //       floor.toString() + room.toString().padStart(2, "0")
@@ -65,20 +25,20 @@ main()
               //   }-${batch}`
               // );
               console.log(
-                `${hostel}-${room.toString().padStart(3, "0")}-${
-                  hardcodedBatch || batch
+                `${hostel}-${floor}${room.toString().padStart(2, "0")}-${
+                  batch
                 }`
               );
               data.add(
                 JSON.stringify({
-                  roomId: `${hostel}-${room.toString().padStart(3, "0")}-${
-                    hardcodedBatch || batch
+                  roomId: `${hostel}-${floor}${room.toString().padStart(2, "0")}-${
+                    batch
                   }`,
                   hostel,
                   gender,
                   floor,
-                  roomNum: room.toString().padStart(3, "0"),
-                  batch: hardcodedBatch || batch,
+                  roomNum: `${floor}${room.toString().padStart(2, "0")}`,
+                  batch,
                   capacity,
                   numFilled: 0,
                   students: [],
@@ -126,3 +86,4 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+/* vi: set et sw=2: */

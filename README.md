@@ -1,6 +1,6 @@
 # room-allocation
 
-## client : React + tailwind
+## Client : React + Tailwind
 
 Register an application at Microsoft Azure Portal and put the configuration at client/src/authConfig.js
 To run a development server at http://localhost:5173/:

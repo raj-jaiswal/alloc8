@@ -2,9 +2,10 @@ import Redis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const redis = new Redis();
-//const crypto= require('crypto');
 import crypto from "crypto";
+
 const codeExpiryDelta = 10 * 60000;
+
 async function acquireLock(key, ttl) {
   const lockKey = `lock:${key}`;
   const result = await redis.set(lockKey, "locked", "NX", "EX", ttl);
@@ -16,10 +17,6 @@ async function releaseLock(key) {
   await redis.del(lockKey);
 }
 
-// const hostelMap = new Map();
-// hostelMap.set("BTech21", "kalam");
-// hostelMap.set("BTech22", "kalam");
-// hostelMap.set("BTech23", "aryabhatta");
 function getBatch(rollnum) {
   if (rollnum.length < 2) {
     console.log("Invalid rollnum", rollnum);
@@ -35,15 +32,13 @@ function getBatch(rollnum) {
 
 function getRollNumber(preferred_username) {
   const mailParts = preferred_username.split("@")[0].split("_");
-  if (mailParts[0] == "1821me16" || mailParts[0] == "1821ph11" || mailParts[0] == "1821me11") {
-    return mailParts[0];
-  }
   if (mailParts.length != 2) {
     console.error("Invalid mail", preferred_username);
     return null;
   }
-  if (mailParts[0].startsWith("2") || mailParts[0].startsWith("1")) return mailParts[0];
-  else if (mailParts[1].startsWith("2") || mailParts[1].startsWith("1")) return mailParts[1];
+  // Roll number starts with 2
+  if (mailParts[0].startsWith("2")) return mailParts[0];
+  else if (mailParts[1].startsWith("2")) return mailParts[1];
   else {
     console.error("Invalid mail", preferred_username);
     return null;
@@ -116,30 +111,6 @@ async function getRoom(req, res) {
   }
   let batch = getBatch(getRollNumber(req.auth.preferred_username));
 
-  if (
-    [
-      "phd14",
-      "phd15",
-      "phd16",
-      "phd17",
-      "phd18",
-      "phd19",
-      "phd20",
-      "phd21",
-    ].includes(batch) ||
-    (batch == "phd21" && gender == "male")
-  ) {
-    batch = "phd14to20male";
-  }
-
-  if (
-    ["phd17", "phd18", "phd19", "phd20", "phd21", "phd22", "phd23"].includes(
-      batch
-    ) &&
-    gender == "female"
-  ) {
-    batch = "phd17to23female";
-  }
   console.log("Getting rooms for batch:", batch);
   try {
     const validRooms = await prisma.rooms.findMany({
@@ -162,6 +133,7 @@ async function getRoom(req, res) {
           codeGeneratedAt.getTime() + codeExpiryDelta
         ); // 10 minutes tak locked
         const now = new Date();
+
 
         if (now > codeExpiryTime) {
           room.roommateCode = null;
@@ -189,37 +161,6 @@ async function getRoom(req, res) {
 async function roomBooking(req, res) {
   const { roomId, roommateCode, gender } = req.body;
   let batch = getBatch(getRollNumber(req.auth.preferred_username));
-  const hardCodedCapacity = null;
-  if (
-    ["phd17", "phd18", "phd19"].includes(batch) &&
-    roomId.includes("asima a")
-  ) {
-    hardCodedCapacity = 2;
-  }
-  if (
-    [
-      "phd14",
-      "phd15",
-      "phd16",
-      "phd17",
-      "phd18",
-      "phd19",
-      "phd20",
-      "phd21",
-    ].includes(batch) ||
-    (batch == "phd21" && gender == "male")
-  ) {
-    batch = "phd14to20male";
-  }
-
-  if (
-    ["phd17", "phd18", "phd19", "phd20", "phd21", "phd22", "phd23"].includes(
-      batch
-    ) &&
-    gender == "female"
-  ) {
-    batch = "phd17to23female";
-  }
 
   const name = req.auth.name;
   const studentId = getRollNumber(req.auth.preferred_username);
@@ -310,7 +251,7 @@ async function roomBooking(req, res) {
             students: students,
             roommateCode: code,
             codeGeneratedAt: room.codeGeneratedAt,
-            capacity: hardCodedCapacity || room.capacity,
+            capacity: room.capacity,
           },
         });
 
@@ -322,7 +263,7 @@ async function roomBooking(req, res) {
             roomnum: room.roomNum,
             room: roomId,
             hostel: room.hostel,
-            occupancy: hardCodedCapacity || room.capacity,
+            occupancy: room.capacity,
             gender: gender,
             batch: batch,
           },

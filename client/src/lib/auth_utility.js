@@ -1,4 +1,3 @@
-import { msalInstance } from "../main.jsx";
 function extractRollNumber(email) {
   const regex = /2\w{7}/;
   const match = email.match(regex);
@@ -15,8 +14,8 @@ function getBatch(rollnum) {
   return "error";
 }
 
-function getRollNumber() {
-  let emailId = msalInstance.getAllAccounts()[0].username;
+function getRollNumber(idTokenClaims) {
+  let emailId = idTokenClaims.email;
   const mailParts = emailId.split("@")[0].split("_");
   const rollNumber =
     mailParts[0].startsWith("2") || mailParts[0].startsWith("1")
@@ -29,8 +28,8 @@ function getRollNumber() {
     return rollNumber;
   }
 }
-function getName() {
-  return msalInstance.getAllAccounts()[0].name;
+function getName(idTokenClaims) {
+  return idTokenClaims.name;
 }
 
 export { getRollNumber, getName };

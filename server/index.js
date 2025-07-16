@@ -11,7 +11,6 @@ import { expressjwt as jwt } from "express-jwt";
 import jwkToPem from "jwk-to-pem";
 import path from "path";
 const prisma = new PrismaClient();
-import apiLimiter from "./rateLimiter.js";
 
 // async function main() {
 //   // ... you will write your Prisma Client queries here
@@ -46,9 +45,9 @@ fetch(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/fresher", fresherRoutes);
+// app.use("/api/fresher", fresherRoutes);
 app.use("/api/nonfresher", nonfresherRoutes);
-app.use("/api/smp", smpRoutes);
+// app.use("/api/smp", smpRoutes);
 const PORT = process.env.PORT || 8500;
 app.listen(PORT, () => {
   console.log("Connected to Backend on Port", PORT);
