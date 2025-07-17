@@ -16,6 +16,7 @@ router.use(async (req, res, next) => {
   const myjwt = jwt.decode(token, { complete: true })
   if (myjwt == null) {
     res.sendStatus(401);
+    return;
   }
   const kid = myjwt.header.kid;
   let i;
@@ -34,7 +35,7 @@ router.use(async (req, res, next) => {
     let email = res.locals.jwt.email;
     if (!Object.keys(emailmap).includes(email)) {
         console.error("Invalid email: ", email);
-        res.sendStatus(401);
+        res.status(401).json({ error: "Invalid email" });
         return;
     }
     res.locals.batch = emailmap[email]["batch"]
@@ -43,6 +44,7 @@ router.use(async (req, res, next) => {
     res.locals.name = res.locals.jwt.name;
     next();
   } catch (e) {
+    console.error(e);
     res.sendStatus(401);
   }
 });

@@ -71,6 +71,7 @@ async function showDetails(req, res) {
       res.status(400).json({ error: "kindly wait for allocation!" });
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 }

@@ -33,6 +33,8 @@ import {
 import { useNavigate } from "react-router";
 import Footer from "@/components/Footer";
 import { useMsal } from "@azure/msal-react";
+import { BrowserAuthError, InteractionRequiredAuthError } from "@azure/msal-browser";
+import { getName } from "@/lib/auth_utility";
 
 const steps = [
   { title: "Hostel" },
@@ -215,7 +217,8 @@ const FloorAndRoom = ({
   const updateRooms = () => {
     if (
       !floor ||
-      !hostel
+      !hostel ||
+      !idToken
     ) {
       return;
     }
@@ -245,6 +248,7 @@ const FloorAndRoom = ({
   };
   const [roommateCode, setRoommateCode] = useState("");
   const bookRoom = (roomId) => {
+    if (!idToken) return;
     fetch(`${import.meta.env.VITE_SERVER_URL}/api/nonfresher/room-booking`, {
       method: "POST",
       headers: {
@@ -266,7 +270,7 @@ const FloorAndRoom = ({
   };
   useEffect(() => {
     updateRooms();
-  }, [floor]);
+  }, [hostel, floor, idToken]);
   const getRoomStatus = (room) => {
     if (room.capacity <= room.numFilled) {
       return "Full";
@@ -439,26 +443,29 @@ const FloorAndRoom = ({
 const OthersRoomAllocPage = () => {
   const { instance } = useMsal();
   const [idToken, setIdToken] = useState();
-  const [idTokenClaims, setIdTokenClaims] = useState();
-  const email = idTokenClaims?.email;
-  const { batch, gender } = emailmap[email];
+  const [ name, setName ] = useState();
+  const [ availableRooms, setAvailableRooms ] = useState([]);
   const request = { scopes: [] };
 
   useEffect(() => {
     instance.acquireTokenSilent(request).then(tokenResponse => {
       setIdToken(tokenResponse.idToken);
-      setIdTokenClaims(tokenResponse.idTokenClaims);
+      setName(tokenResponse.idTokenClaims.name);
+      const { batch, gender } = emailmap[tokenResponse.idTokenClaims.email];
+      setAvailableRooms(hostel_data[batch][gender]["hostels"]);
     }).catch(async (error) => {
       if (error instanceof InteractionRequiredAuthError) {
         // fallback to interaction when silent call fails
         return msalInstance.acquireTokenRedirect(request);
+      } else if (error instanceof BrowserAuthError) {
+        navigate("/");
+        return;
       }
 
       // handle other errors
       console.log(error);
     });
   }, [instance]);
-  const available_rooms = hostel_data[batch][gender]["hostels"];
   let [activeStep, setActiveStep] = useState(0);
   const [hostel, setHostel] = useState("");
   // const [floor, setFloor] = useState(0);
@@ -468,7 +475,7 @@ const OthersRoomAllocPage = () => {
       case 0:
         return (
           <Hostel
-            data={available_rooms}
+            data={availableRooms}
             activeStep={0}
             onPrev={() => {
               setActiveStep((a) => a - 1);
@@ -483,7 +490,7 @@ const OthersRoomAllocPage = () => {
         return (
           <FloorAndRoom
             activeStep={1}
-            data={available_rooms[hostel.toLowerCase()]}
+            data={availableRooms[hostel.toLowerCase()]}
             hostel={hostel}
             idToken={idToken}
             onPrev={() => {
@@ -500,7 +507,7 @@ const OthersRoomAllocPage = () => {
   };
   return (
     <div className="bg-[#f1f5f9] h-full w-full">
-      <Header></Header>
+      <Header name={name}></Header>
       <div style={{ fontFamily: "sans-serif" }} className="bg-[#f1f5f9]">
         <Stepper
           steps={steps}

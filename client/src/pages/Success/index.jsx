@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import Footer from "@/components/Footer";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { BrowserAuthError, InteractionRequiredAuthError } from "@azure/msal-browser";
 import { useMsal, AuthenticatedTemplate } from "@azure/msal-react";
 
 const SuccessPage = () => {
@@ -26,6 +27,9 @@ const SuccessPage = () => {
       if (error instanceof InteractionRequiredAuthError) {
         // fallback to interaction when silent call fails
         return msalInstance.acquireTokenRedirect(request);
+      } else if (error instanceof BrowserAuthError) {
+        navigate("/");
+        return;
       }
 
       // handle other errors
@@ -34,6 +38,7 @@ const SuccessPage = () => {
   }, [instance]);
 
   useEffect(() => {
+    if (!idToken) return;
     fetch(
       `${import.meta.env.VITE_SERVER_URL}/api/nonfresher/allocated-details`,
       {
@@ -72,7 +77,7 @@ const SuccessPage = () => {
 
   return (
     <div className="bg-[#f1f5f9] h-full w-full">
-      <Header></Header>
+      <Header name={getName(idTokenClaims)}></Header>
       <Spinner loading={loading}></Spinner>
 
       <div

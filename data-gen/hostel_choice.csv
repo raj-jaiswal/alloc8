@@ -8,7 +8,7 @@ BTech24,male,Aryabhatta B,Double,"0,1,2",(004 To 008) (010 To 016) (101 To 132) 
 PhD19,male,Kalam D,Double,"5",(502 To 506) (508 To 510),,
 PhD20,male,Kalam D,Double,"4",(412 To 415) (417 To 417) (421 To 430) (432 To 436),,
 PhD22,male,Aryabhatta B,Single,"2,3,4",(231 To 232) (301 To 301) (303 To 309) (311 To 320) (322 To 332) (401 To 425),,
-BTech23,female,Asima A,Double,"5",(503 To 503) (505 To 505) (509 To 509),,
+BTech23,female,Asima A,Double,"1,5",(103 To 103) (505 To 505) (509 To 509),,
 BTech23,female,Asima C,Double,"0,1,2,3,4,5",(001 To 006) (101 To 110) (201 To 210) (301 To 310) (401 To 410) (501 To 510),,
 BTech23,female,Asima D,Double,"0",(001 To 005),,
 BTech24,female,Asima D,Triple,"0,1,2,3,4,5",(006 To 006) (101 To 110) (201 To 210) (301 To 310) (401 To 410) (501 To 510),,
