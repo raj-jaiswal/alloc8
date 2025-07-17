@@ -17,36 +17,8 @@ async function releaseLock(key) {
   await redis.del(lockKey);
 }
 
-function getBatch(rollnum) {
-  if (rollnum.length < 2) {
-    console.log("Invalid rollnum", rollnum);
-    return "error";
-  }
-  const year = rollnum[0] + rollnum[1];
-  if (rollnum[2] == "0") return "btech" + year;
-  if (rollnum[2] == "1" && rollnum[3] == "1") return "mtech" + year;
-  if (rollnum[2] == "1" && rollnum[3] == "2") return "msc" + year;
-  if (rollnum[2] == "2") return "phd" + year;
-  return "error";
-}
-
-function getRollNumber(preferred_username) {
-  const mailParts = preferred_username.split("@")[0].split("_");
-  if (mailParts.length != 2) {
-    console.error("Invalid mail", preferred_username);
-    return null;
-  }
-  // Roll number starts with 2
-  if (mailParts[0].startsWith("2")) return mailParts[0];
-  else if (mailParts[1].startsWith("2")) return mailParts[1];
-  else {
-    console.error("Invalid mail", preferred_username);
-    return null;
-  }
-}
-
 async function showDetails(req, res) {
-  const rollnum = getRollNumber(req.auth.preferred_username);
+  const rollnum = res.locals.rollNumber;
   try {
     const student = await prisma.students.findUnique({
       where: { rollnum: rollnum },
@@ -104,14 +76,15 @@ async function showDetails(req, res) {
 }
 
 async function getRoom(req, res) {
-  let { gender, hostel, floor } = req.body;
-  if (gender == undefined || hostel == undefined || floor == undefined) {
+  let { hostel, floor } = req.body;
+  if (hostel == undefined || floor == undefined) {
     res.sendStatus(422);
     return;
   }
-  let batch = getBatch(getRollNumber(req.auth.preferred_username));
+  let batch = res.locals.batch;
+  let gender = res.locals.gender;
 
-  console.log("Getting rooms for batch:", batch);
+  // console.log("Getting rooms for batch:", batch);
   try {
     const validRooms = await prisma.rooms.findMany({
       where: {
@@ -148,9 +121,9 @@ async function getRoom(req, res) {
         }
       }
 
-      if (room.roommateCode) {
-        room.roommateCode = "present";
-      }
+//      if (room.roommateCode) {
+//        room.roommateCode = "present";
+//      }
     }
     return res.status(200).json({ rooms: validRooms });
   } catch (error) {
@@ -159,11 +132,12 @@ async function getRoom(req, res) {
 }
 
 async function roomBooking(req, res) {
-  const { roomId, roommateCode, gender } = req.body;
-  let batch = getBatch(getRollNumber(req.auth.preferred_username));
+  const { roomId, roommateCode } = req.body;
+  let batch = res.locals.batch;
+  let gender = res.locals.gender;
 
-  const name = req.auth.name;
-  const studentId = getRollNumber(req.auth.preferred_username);
+  const name = res.locals.name;
+  const studentId = res.locals.rollNumber;
   const lockKey = `room:${roomId}`;
   const studentLockKey = `student:${studentId}`;
 
@@ -189,7 +163,7 @@ async function roomBooking(req, res) {
     });
 
     if (!room) {
-      console.log("Room does not exist:", roomId);
+      // console.log("Room does not exist:", roomId);
       return res.status(400).json({ error: "Room does not exist" });
     }
 
@@ -198,7 +172,7 @@ async function roomBooking(req, res) {
     });
 
     if (student && student.allocated) {
-      console.log("Student already allotted:", studentId);
+      // console.log("Student already allotted:", studentId);
       return res.status(400).json({
         error: "You have already been given a room. You cannot book any more!",
       });

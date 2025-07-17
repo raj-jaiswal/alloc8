@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-import available_rooms from "../../data-gen/available_rooms.json" assert { type: "json" };
+import available_rooms from "../../data-gen/available_rooms.json" with { type: "json" };
 
 async function main() {}
 
@@ -12,8 +12,8 @@ main()
         let capacity = available_rooms[batch][gender]["capacity"];
         for (let hostel in available_rooms[batch][gender]["hostels"]) {
           console.log("adding for", batch, gender, hostel, capacity);
-          for (let floor in available_rooms[batch][gender][hostel]) {
-            for (let room of available_rooms[batch][gender][hostel][floor]) {
+          for (let floor in available_rooms[batch][gender]["hostels"][hostel]) {
+            for (let room of available_rooms[batch][gender]["hostels"][hostel][floor]) {
               //   console.log(
               //     `${hostel}-${
               //       floor.toString() + room.toString().padStart(2, "0")

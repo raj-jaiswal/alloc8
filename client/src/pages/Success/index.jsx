@@ -10,35 +10,47 @@ import { useMsal, AuthenticatedTemplate } from "@azure/msal-react";
 
 const SuccessPage = () => {
   const { instance } = useMsal();
-  const activeAccount = instance.getActiveAccount();
-  const idTokenClaims = activeAccount.idTokenClaims;
+  const [idToken, setIdToken] = useState();
+  const [idTokenClaims, setIdTokenClaims] = useState();
   const [loading, setLoading] = useState(true);
   const [studData, setStudData] = useState({});
   const navigate = useNavigate();
   const contentRef = useRef();
+  const request = { scopes: [] };
+
+  useEffect(() => {
+    instance.acquireTokenSilent(request).then(tokenResponse => {
+      setIdToken(tokenResponse.idToken);
+      setIdTokenClaims(tokenResponse.idTokenClaims);
+    }).catch(async (error) => {
+      if (error instanceof InteractionRequiredAuthError) {
+        // fallback to interaction when silent call fails
+        return msalInstance.acquireTokenRedirect(request);
+      }
+
+      // handle other errors
+      console.log(error);
+    });
+  }, [instance]);
 
   useEffect(() => {
     fetch(
-      "/api/nonfresher/allocated-details?" +
-        new URLSearchParams({
-          rollnum: getRollNumber(idTokenClaims),
-        }).toString(),
+      `${import.meta.env.VITE_SERVER_URL}/api/nonfresher/allocated-details`,
       {
-        method: "GET",
-        headers: { "X-Alloc8-IDToken": activeAccount.idToken },
+        headers: { "X-Alloc8-IDToken": idToken },
       }
     )
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
+        // console.log(data);
         if (data.error) {
           navigate("/allotroom");
           return;
         }
         setLoading(false);
         setStudData(data);
-      });
-  }, []);
+      })
+  }, [idToken]);
 
   const viewport = document.querySelector("meta[name=viewport]");
   const downloadPDF = () => {
@@ -59,7 +71,6 @@ const SuccessPage = () => {
   };
 
   return (
-    <AuthenticatedTemplate>
     <div className="bg-[#f1f5f9] h-full w-full">
       <Header></Header>
       <Spinner loading={loading}></Spinner>
@@ -107,10 +118,10 @@ const SuccessPage = () => {
             room are as follows -
             <div className="p-5 text-xl font-mono border-2 my-5 capitalize">
               <div>
-                <b>Name: </b> {getName(idTokenClaims)}
+                <b>Name: </b> <AuthenticatedTemplate>{getName(idTokenClaims)}</AuthenticatedTemplate>
               </div>
               <div>
-                <b>Roll No.: </b> {getRollNumber(idTokenClaims).toUpperCase()}
+                <b>Roll No.: </b> <AuthenticatedTemplate>{getRollNumber(idTokenClaims).toUpperCase()}</AuthenticatedTemplate>
               </div>
               <div>
                 <b>Hostel: </b> {studData?.hostel}
@@ -161,7 +172,6 @@ const SuccessPage = () => {
       </div>
       <Footer></Footer>
     </div>
-    </AuthenticatedTemplate>
   );
 };
 

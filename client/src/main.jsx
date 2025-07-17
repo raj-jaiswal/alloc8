@@ -1,7 +1,7 @@
 import React, { Children, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router";
 import Spinner from "./components/spinner.jsx";
 import {
   Home,
@@ -30,11 +30,11 @@ const router = createBrowserRouter([
         element: <Home />,
         errorElement: <Error />,
       },
-      {
+      /* {
         path: "/Register",
         element: <Register />,
         errorElement: <Error />,
-      },
+      }, */
       {
         path: "/allotroom",
         element: <Others />,
@@ -50,7 +50,7 @@ const router = createBrowserRouter([
         element: <Success />,
         errorElement: <Error />,
       },
-      {
+      /* {
         path: "/waiting",
         element: <WaitingPage />,
         errorElement: <Error />,
@@ -64,7 +64,7 @@ const router = createBrowserRouter([
         path: "/fresher/success",
         element: <FresherSuccess />,
         errorElement: <Error />,
-      },
+      }, */
     ],
   },
 ]);

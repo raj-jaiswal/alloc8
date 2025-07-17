@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import fresherRoutes from "./routes/fresherRoutes.js";
 import nonfresherRoutes from "./routes/nonfresherRoutes.js";
@@ -31,15 +32,19 @@ const app = express();
 // Middleware
 
 app.use(cors({ origin: "https://alloc8.in", credentials: true }));
-app.locals.pems = [];
+app.set("pems", []);
 fetch(
     "https://login.microsoftonline.com/a57f7d92-038e-4d4c-8265-7cd2beb33b34/discovery/v2.0/keys"
 )
     .then((response) => response.json())
     .then((jwks) => jwks.keys)
     .then((keys) => {
-        app.locals.keys = keys;
-        keys.forEach((jwk) => app.locals.pems.push(jwkToPem(jwk)));
+        app.set("keys", keys);
+        keys.forEach((jwk) => {
+		let pems = app.get("pems");
+		pems.push(jwkToPem(jwk));
+		app.set("pems", pems);
+	});
     });
 
 app.use(express.json());

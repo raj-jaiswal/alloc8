@@ -1,11 +1,27 @@
 import { getName } from "@/lib/auth_utility";
 import { User } from "lucide-react";
 import { useMsal, AuthenticatedTemplate } from "@azure/msal-react";
+import { useState, useEffect } from "react";
 
 function Header() {
   const { instance } = useMsal();
-  const activeAccount = instance.getActiveAccount();
-  const idTokenClaims = activeAccount.idTokenClaims;
+  const [idTokenClaims, setIdTokenClaims] = useState();
+  const request = { scopes: [] };
+
+  useEffect(() => {
+    instance.acquireTokenSilent(request).then(tokenResponse => {
+      setIdTokenClaims(tokenResponse.idTokenClaims);
+    }).catch(async (error) => {
+      if (error instanceof InteractionRequiredAuthError) {
+        // fallback to interaction when silent call fails
+        return msalInstance.acquireTokenRedirect(request);
+      }
+
+      // handle other errors
+      console.log(error);
+    });
+  }, [instance]);
+
 
   return (
       <div className="w-screen h-[60px] leading-[60px] py-2 px-5 bg-slate-100 relative">

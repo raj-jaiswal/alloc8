@@ -1,5 +1,7 @@
 */node_modules
 */dist
+# Keep environment variables out of version control
+*/.env
 
 # Local Netlify folder
 .netlify
@@ -34,6 +36,4 @@ client/src/authConfig.js
 
 ## server/
 
-# Keep environment variables out of version control
-server/.env
 */.ipynb_checkpoints
