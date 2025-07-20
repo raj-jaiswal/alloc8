@@ -31,7 +31,7 @@ const app = express();
 
 // Middleware
 
-app.use(cors({ origin: "https://alloc8.in", credentials: true }));
+app.use(cors({ origin: ["https://alloc8.in", "https://mock.alloc8.in", "https://piedras.alloc8.in", "https://bihta.alloc8.in" ] }));
 app.set("pems", []);
 fetch(
     "https://login.microsoftonline.com/a57f7d92-038e-4d4c-8265-7cd2beb33b34/discovery/v2.0/keys"

@@ -23,6 +23,10 @@ async function showDetails(req, res) {
     const student = await prisma.students.findUnique({
       where: { rollnum: rollnum },
     });
+    if (!student) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
     const room = await prisma.rooms.findUnique({
       where: { roomId: student.room },
     });
@@ -71,7 +75,7 @@ async function showDetails(req, res) {
       res.status(400).json({ error: "kindly wait for allocation!" });
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 }
@@ -88,6 +92,9 @@ async function getRoom(req, res) {
   // console.log("Getting rooms for batch:", batch);
   try {
     const validRooms = await prisma.rooms.findMany({
+      omit: {
+        roommateCode: true,
+      },
       where: {
         AND: [
           { batch: batch },

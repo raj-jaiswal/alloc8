@@ -13,7 +13,7 @@ router.use(async (req, res, next) => {
 
   const keys = req.app.get("keys");
   const pems = req.app.get("pems");
-  const myjwt = jwt.decode(token, { complete: true })
+  const myjwt = jwt.decode(token, { complete: true });
   if (myjwt == null) {
     res.sendStatus(401);
     return;
@@ -33,7 +33,7 @@ router.use(async (req, res, next) => {
     });
 
     let email = res.locals.jwt.email;
-    if (!Object.keys(emailmap).includes(email)) {
+    if (!Object.keys(emailmap).includes(email) && emailmap[email]["rollNumber"].startsWith("24")) {
         console.error("Invalid email: ", email);
         res.status(401).json({ error: "Invalid email" });
         return;

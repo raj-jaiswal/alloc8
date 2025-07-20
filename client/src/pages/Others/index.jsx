@@ -283,6 +283,20 @@ const FloorAndRoom = ({
     }
   };
 
+  const getCodeStatus = (codeGeneratedAt) => {
+    const codeExpiryDelta = 10 * 60000;
+    codeGeneratedAt = new Date(codeGeneratedAt);
+    const codeExpiryTime = new Date(
+      codeGeneratedAt.getTime() + codeExpiryDelta
+    );
+    const now = new Date();
+
+    if (now > codeExpiryTime) {
+      return "expired";
+    }
+    return "valid";
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -394,8 +408,7 @@ const FloorAndRoom = ({
                         style={{
                           display:
                             getRoomStatus(room) == "Partial" &&
-                            room.roommateCode &&
-                            room.roommateCode.length != 0
+                            getCodeStatus(room.codeGeneratedAt) != "expired"
                               ? "block"
                               : "none",
                         }}
