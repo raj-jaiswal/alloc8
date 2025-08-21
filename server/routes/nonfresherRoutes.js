@@ -24,15 +24,14 @@ router.use(async (req, res, next) => {
     if (keys[i].kid == kid) break;
   }
   try {
-    res.locals.jwt = jwt.verify(token, pems[i], {
+    const jwt = jwt.verify(token, pems[i], {
       algorithms: "RS256",
-      /* TODO: add these to config.json - pranjal */
       audience: process.env.AUDIENCE,
       issuer:
         "https://login.microsoftonline.com/a57f7d92-038e-4d4c-8265-7cd2beb33b34/v2.0",
     });
 
-    let email = res.locals.jwt.email;
+    let email = jwt.email;
     if (!Object.keys(emailmap).includes(email) && emailmap[email]["rollNumber"].startsWith("24")) {
         console.error("Invalid email: ", email);
         res.status(401).json({ error: "Invalid email" });
@@ -41,7 +40,7 @@ router.use(async (req, res, next) => {
     res.locals.batch = emailmap[email]["batch"]
     res.locals.gender = emailmap[email]["gender"]
     res.locals.rollNumber = emailmap[email]["rollNumber"]
-    res.locals.name = res.locals.jwt.name;
+    res.locals.name = jwt.name;
     next();
   } catch (e) {
     console.error(e);

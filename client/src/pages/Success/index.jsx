@@ -48,7 +48,10 @@ const SuccessPage = () => {
       .then((res) => res.json())
       .then((data) => {
         // console.log(data);
-        if (data.error) {
+        if (data.disabled) {
+          alert("You cannot book room yet. Please wait for an official mail.");
+          navigate("/");
+        } else if (data.error) {
           navigate("/allotroom");
           return;
         }

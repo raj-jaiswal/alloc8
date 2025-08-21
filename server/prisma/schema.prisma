@@ -53,7 +53,7 @@ model fresherDetails {
   sleep String
 }
 
-model smpDetails{
+model smpDetails {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   rollnum String @unique
   branch String

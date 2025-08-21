@@ -37,3 +37,4 @@ client/src/authConfig.js
 ## server/
 
 */.ipynb_checkpoints
+data-gen/*.json

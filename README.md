@@ -54,6 +54,7 @@ npx prisma generate
 limit_req_zone $binary_remote_addr zone=ip:10m rate=5r/s;
 
 server {
+    http2 on;
     server_name api.alloc8.in;
     location / {
             limit_req zone=ip burst=12 delay=8;

@@ -9,42 +9,38 @@ main()
     const data = new Set();
     for (let batch in available_rooms) {
       for (let gender in available_rooms[batch]) {
-        let capacity = available_rooms[batch][gender]["capacity"];
+        const capacity = available_rooms[batch][gender]["capacity"];
         for (let hostel in available_rooms[batch][gender]["hostels"]) {
           console.log("adding for", batch, gender, hostel, capacity);
-          for (let floor in available_rooms[batch][gender]["hostels"][hostel]) {
-            for (let room of available_rooms[batch][gender]["hostels"][hostel][floor]) {
-              //   console.log(
-              //     `${hostel}-${
-              //       floor.toString() + room.toString().padStart(2, "0")
-              //     }`
-              //   );
-              // ids.push(
-              //   `${hostel}-${
-              //     floor.toString() + room.toString().padStart(2, "0")
-              //   }-${batch}`
-              // );
-              console.log(
-                `${hostel}-${floor}${room.toString().padStart(2, "0")}-${
-                  batch
-                }`
-              );
-              data.add(
-                JSON.stringify({
-                  roomId: `${hostel}-${floor}${room.toString().padStart(2, "0")}-${
-                    batch
-                  }`,
-                  hostel,
-                  gender,
-                  floor,
-                  roomNum: `${floor}${room.toString().padStart(2, "0")}`,
-                  batch,
-                  capacity,
-                  numFilled: 0,
-                  students: [],
-                  roommateCode: "",
-                })
-              );
+          for (let block in available_rooms[batch][gender]["hostels"][hostel]) {
+            for (let roomsRange of available_rooms[batch][gender]["hostels"][hostel][block]) {
+              roomsRange = roomsRange.split("-");
+              /* If floor is not same */
+              if (roomsRange[0][0] !== roomsRange[1][0]) {
+                throw new Error(`Both ends of the room range ${roomsRange[0]}-${roomsRange[1]} have different floors`);
+              }
+              const floor = roomsRange[0][0];
+              const low = parseInt(roomsRange[0]);
+              const high = parseInt(roomsRange[1]);
+              for (let room = low; room <= high; room++) {
+                console.log(
+                  `${hostel}${block}-${room.toString().padStart(3, "0")}-${batch}`
+                );
+                data.add(
+                  {
+                    hostel,
+                    block,
+                    gender,
+                    floor,
+                    roomNum: `${room.toString().padStart(3, "0")}`,
+                    batch,
+                    capacity,
+                    occupancy: 0,
+                    students: [],
+                    roommateCode: null,
+                  }
+                );
+              }
             }
           }
         }
@@ -67,9 +63,9 @@ main()
     const finalData = [];
     const ids = [];
     for (const x of data) {
-      console.log(JSON.parse(x).roomId);
-      ids.push(JSON.parse(x).roomId);
-      finalData.push(JSON.parse(x));
+      console.log(x);
+      ids.push(x);
+      finalData.push(x);
     }
     console.log(
       "duplicate IDs",

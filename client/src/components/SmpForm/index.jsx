@@ -47,7 +47,6 @@ export default function SmpForm() {
 
   const onSubmit = (formData) => {
     // console.log(formData);
-    // TODO: replace this with idToken
     instance.acquireTokenSilent(accessTokenRequest).then((res) => {
       fetch(`${import.meta.env.VITE_SERVER_URL}/api/smp/submit-details`, {
         method: "POST",
