@@ -2,9 +2,10 @@ import Redis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 const redis = new Redis();
-//const crypto= require('crypto');
 import crypto from "crypto";
+
 const codeExpiryDelta = 10 * 60000;
+
 async function acquireLock(key, ttl) {
   const lockKey = `lock:${key}`;
   const result = await redis.set(lockKey, "locked", "NX", "EX", ttl);
@@ -16,46 +17,16 @@ async function releaseLock(key) {
   await redis.del(lockKey);
 }
 
-// const hostelMap = new Map();
-// hostelMap.set("BTech21", "kalam");
-// hostelMap.set("BTech22", "kalam");
-// hostelMap.set("BTech23", "aryabhatta");
-function getBatch(rollnum) {
-  if (rollnum.length < 2) {
-    console.log("Invalid rollnum", rollnum);
-    return "error";
-  }
-  const year = rollnum[0] + rollnum[1];
-  if (rollnum[2] == "0") return "btech" + year;
-  if (rollnum[2] == "1" && rollnum[3] == "1") return "mtech" + year;
-  if (rollnum[2] == "1" && rollnum[3] == "2") return "msc" + year;
-  if (rollnum[2] == "2") return "phd" + year;
-  return "error";
-}
-
-function getRollNumber(preferred_username) {
-  const mailParts = preferred_username.split("@")[0].split("_");
-  if (mailParts[0] == "1821me16" || mailParts[0] == "1821ph11" || mailParts[0] == "1821me11") {
-    return mailParts[0];
-  }
-  if (mailParts.length != 2) {
-    console.error("Invalid mail", preferred_username);
-    return null;
-  }
-  if (mailParts[0].startsWith("2") || mailParts[0].startsWith("1")) return mailParts[0];
-  else if (mailParts[1].startsWith("2") || mailParts[1].startsWith("1")) return mailParts[1];
-  else {
-    console.error("Invalid mail", preferred_username);
-    return null;
-  }
-}
-
 async function showDetails(req, res) {
-  const rollnum = getRollNumber(req.auth.preferred_username);
+  const rollnum = res.locals.rollNumber;
   try {
     const student = await prisma.students.findUnique({
       where: { rollnum: rollnum },
     });
+    if (!student) {
+      res.status(500).json({ error: error.message });
+      return;
+    }
     const room = await prisma.rooms.findUnique({
       where: { roomId: student.room },
     });
@@ -104,45 +75,26 @@ async function showDetails(req, res) {
       res.status(400).json({ error: "kindly wait for allocation!" });
     }
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 }
 
 async function getRoom(req, res) {
-  let { gender, hostel, floor } = req.body;
-  if (gender == undefined || hostel == undefined || floor == undefined) {
+  let { hostel, floor } = req.body;
+  if (hostel == undefined || floor == undefined) {
     res.sendStatus(422);
     return;
   }
-  let batch = getBatch(getRollNumber(req.auth.preferred_username));
+  let batch = res.locals.batch;
+  let gender = res.locals.gender;
 
-  if (
-    [
-      "phd14",
-      "phd15",
-      "phd16",
-      "phd17",
-      "phd18",
-      "phd19",
-      "phd20",
-      "phd21",
-    ].includes(batch) ||
-    (batch == "phd21" && gender == "male")
-  ) {
-    batch = "phd14to20male";
-  }
-
-  if (
-    ["phd17", "phd18", "phd19", "phd20", "phd21", "phd22", "phd23"].includes(
-      batch
-    ) &&
-    gender == "female"
-  ) {
-    batch = "phd17to23female";
-  }
-  console.log("Getting rooms for batch:", batch);
+  // console.log("Getting rooms for batch:", batch);
   try {
     const validRooms = await prisma.rooms.findMany({
+      omit: {
+        roommateCode: true,
+      },
       where: {
         AND: [
           { batch: batch },
@@ -163,6 +115,7 @@ async function getRoom(req, res) {
         ); // 10 minutes tak locked
         const now = new Date();
 
+
         if (now > codeExpiryTime) {
           room.roommateCode = null;
           room.codeGeneratedAt = null;
@@ -176,9 +129,9 @@ async function getRoom(req, res) {
         }
       }
 
-      if (room.roommateCode) {
-        room.roommateCode = "present";
-      }
+//      if (room.roommateCode) {
+//        room.roommateCode = "present";
+//      }
     }
     return res.status(200).json({ rooms: validRooms });
   } catch (error) {
@@ -187,42 +140,12 @@ async function getRoom(req, res) {
 }
 
 async function roomBooking(req, res) {
-  const { roomId, roommateCode, gender } = req.body;
-  let batch = getBatch(getRollNumber(req.auth.preferred_username));
-  const hardCodedCapacity = null;
-  if (
-    ["phd17", "phd18", "phd19"].includes(batch) &&
-    roomId.includes("asima a")
-  ) {
-    hardCodedCapacity = 2;
-  }
-  if (
-    [
-      "phd14",
-      "phd15",
-      "phd16",
-      "phd17",
-      "phd18",
-      "phd19",
-      "phd20",
-      "phd21",
-    ].includes(batch) ||
-    (batch == "phd21" && gender == "male")
-  ) {
-    batch = "phd14to20male";
-  }
+  const { roomId, roommateCode } = req.body;
+  let batch = res.locals.batch;
+  let gender = res.locals.gender;
 
-  if (
-    ["phd17", "phd18", "phd19", "phd20", "phd21", "phd22", "phd23"].includes(
-      batch
-    ) &&
-    gender == "female"
-  ) {
-    batch = "phd17to23female";
-  }
-
-  const name = req.auth.name;
-  const studentId = getRollNumber(req.auth.preferred_username);
+  const name = res.locals.name;
+  const studentId = res.locals.rollNumber;
   const lockKey = `room:${roomId}`;
   const studentLockKey = `student:${studentId}`;
 
@@ -248,7 +171,7 @@ async function roomBooking(req, res) {
     });
 
     if (!room) {
-      console.log("Room does not exist:", roomId);
+      // console.log("Room does not exist:", roomId);
       return res.status(400).json({ error: "Room does not exist" });
     }
 
@@ -257,7 +180,7 @@ async function roomBooking(req, res) {
     });
 
     if (student && student.allocated) {
-      console.log("Student already allotted:", studentId);
+      // console.log("Student already allotted:", studentId);
       return res.status(400).json({
         error: "You have already been given a room. You cannot book any more!",
       });
@@ -310,7 +233,7 @@ async function roomBooking(req, res) {
             students: students,
             roommateCode: code,
             codeGeneratedAt: room.codeGeneratedAt,
-            capacity: hardCodedCapacity || room.capacity,
+            capacity: room.capacity,
           },
         });
 
@@ -322,7 +245,7 @@ async function roomBooking(req, res) {
             roomnum: room.roomNum,
             room: roomId,
             hostel: room.hostel,
-            occupancy: hardCodedCapacity || room.capacity,
+            occupancy: room.capacity,
             gender: gender,
             batch: batch,
           },

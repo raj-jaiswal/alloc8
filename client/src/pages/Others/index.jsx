@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 
 import { useEffect, useState } from "react";
-import hostel_data from "@/data/available_rooms.json";
+import hostel_data from "@/../../data-gen/available_rooms.json";
+import emailmap from "@/../../data-gen/email_map.json";
 import Spinner from "@/components/spinner";
 import {
   Dialog,
@@ -32,12 +33,11 @@ import {
 import { useNavigate } from "react-router";
 import Footer from "@/components/Footer";
 import { useMsal } from "@azure/msal-react";
-import { getName, getRollNumber } from "@/lib/auth_utility";
+import { BrowserAuthError, InteractionRequiredAuthError } from "@azure/msal-browser";
+import { getName } from "@/lib/auth_utility";
 
 const steps = [
-  { title: "Details" },
   { title: "Hostel" },
-  // { title: "Floor" },
   { title: "Room" },
 ];
 
@@ -94,97 +94,8 @@ const StepperForm = ({
   );
 };
 
-const Details = ({ onNext, onPrev, activeStep }) => {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const data = new FormData(form);
-    const details = {
-      rollno: getRollNumber(),
-      gender: data.get("gender"),
-      batch: data.get("batch"),
-    };
-    if (!details.rollno || !details.gender || !details.batch) {
-      alert("Please fill all the fields");
-      return;
-    }
-    onNext(details);
-  };
-  return (
-    <StepperForm
-      name="detailData"
-      onSubmit={handleSubmit}
-      onPrev={onPrev}
-      activeStep={activeStep}
-    >
-      <Label htmlFor="rollno" className="w-full">
-        Roll No.
-      </Label>
-      <Input
-        type="text"
-        id="rollno"
-        name="rollno"
-        value={getRollNumber().toUpperCase()}
-        disabled={true}
-      />
-      <Label htmlFor="gender" className="mt-3">
-        Gender
-      </Label>
-      <RadioGroup id="gender" name="gender" defaultValue="Male">
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="Male" id="male" />
-          <Label htmlFor="male">Male</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="Female" id="female" />
-          <Label htmlFor="female">Female</Label>
-        </div>
-      </RadioGroup>
-      <Label htmlFor="gender" className="mt-3">
-        Batch
-      </Label>
-      <Select id="batch" name="batch">
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select Batch" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>B.Tech</SelectLabel>
-            <SelectItem value="BTech21">{"BTech'21"}</SelectItem>
-            <SelectItem value="BTech22">{"BTech'22"}</SelectItem>
-            <SelectItem value="BTech23">{"BTech'23"}</SelectItem>
-          </SelectGroup>
-          <SelectGroup>
-            <SelectLabel>M.Tech</SelectLabel>
-            <SelectItem value="MTech23">{"MTech'23"}</SelectItem>
-          </SelectGroup>
-          <SelectGroup>
-            <SelectLabel>M.Sc</SelectLabel>
-            <SelectItem value="MSc23">{"MSc'23"}</SelectItem>
-          </SelectGroup>
-
-          <SelectGroup>
-            <SelectLabel>Ph.D</SelectLabel>
-            <SelectItem value="PhD14">{"PhD'14"}</SelectItem>
-            <SelectItem value="PhD16">{"PhD'16"}</SelectItem>
-            <SelectItem value="PhD17">{"PhD'17"}</SelectItem>
-            <SelectItem value="PhD18">{"PhD'18"}</SelectItem>
-            <SelectItem value="PhD19">{"PhD'19"}</SelectItem>
-            <SelectItem value="PhD20">{"PhD'20"}</SelectItem>
-            <SelectItem value="PhD21">{"PhD'21"}</SelectItem>
-            <SelectItem value="PhD22">{"PhD'22"}</SelectItem>
-            <SelectItem value="PhD23">{"PhD'23"}</SelectItem>
-            <SelectItem value="PhD24">{"PhD'24"}</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-    </StepperForm>
-  );
-};
 const Hostel = ({ data, onNext, onPrev, activeStep }) => {
   const batchDetails = {};
-  console.log(batchDetails);
-  console.log(data);
   const available_hostels = Object.keys(data);
 
   const handleSubmit = (e) => {
@@ -217,7 +128,7 @@ const Hostel = ({ data, onNext, onPrev, activeStep }) => {
           return (
             <div key={hostel} className="w-full ">
               <Label htmlFor={hostel} className="text-lg">
-                <div className="flex flex-wrap items-center space-x-2 px-10 py-16 bg-slate-200 rounded-lg ">
+                <div className="flex flex-wrap items-center space-x-2 px-10 py-16 bg-slate-200 rounded-lg">
                   <RadioGroupItem value={hostel} id={hostel} />
 
                   <span
@@ -294,7 +205,7 @@ const FloorAndRoom = ({
   activeStep,
   data,
   hostel,
-  studDetails,
+  idToken
 }) => {
   const floors = Object.keys(data);
   const [floor, setFloor] = useState(0);
@@ -302,104 +213,64 @@ const FloorAndRoom = ({
   // const [rooms, setRooms] = useState([]);
   const [roomData, setRoomData] = useState([]);
   const navigate = useNavigate();
-  const { accounts, instance } = useMsal();
 
-  const accessTokenRequest = {
-    account: accounts[0],
-  };
   const updateRooms = () => {
     if (
       !floor ||
-      !studDetails ||
-      !studDetails.batch ||
-      !studDetails.gender ||
-      !hostel
+      !hostel ||
+      !idToken
     ) {
       return;
     }
     const postBody = {
-      batch: studDetails.batch.toLowerCase(),
-      gender: studDetails.gender.toLowerCase(),
       hostel: hostel.toLowerCase(),
       floor: floor.toString(),
     };
 
-    console.log(postBody);
     setLoading(true);
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch("/api/nonfresher/room-status", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Alloc8-IDToken": res.idToken,
-        },
-        body: JSON.stringify(postBody),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setLoading(false);
-          console.log(data);
-          let rooms = data.rooms;
-          rooms.sort((a, b) => a.roomNum - b.roomNum);
-          setRoomData(data.rooms);
-        });
-    });
+    fetch(`${import.meta.env.VITE_SERVER_URL}/api/nonfresher/room-status`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Alloc8-IDToken": idToken,
+      },
+      body: JSON.stringify(postBody),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setLoading(false);
+        // console.log(data);
+        let rooms = data.rooms;
+        rooms.sort((a, b) => a.roomNum - b.roomNum);
+        setRoomData(data.rooms);
+      });
   };
   const [roommateCode, setRoommateCode] = useState("");
   const bookRoom = (roomId) => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch("/api/nonfresher/room-booking", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Alloc8-IDToken": res.idToken,
-        },
-        body: JSON.stringify({
-          studentId: getRollNumber(),
-          roomId: roomId,
-          roommateCode: roommateCode ? roommateCode : null,
-          name: getName(),
-          gender: studDetails.gender,
-          batch: studDetails.batch,
-        }),
-      }).then((res) => {
-        if (res.status == 200) {
-          navigate("/success");
-        } else {
-          res.json().then((data) => alert(data.error));
-        }
-      });
-    });
-  };
-  const getStudDetail = (rollnum) => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch(
-        "/api/nonfresher/allocated-details?" +
-          new URLSearchParams({
-            rollnum: rollnum,
-          }).toString(),
-        {
-          method: "GET",
-          headers: {
-            "X-Alloc8-IDToken": res.idToken,
-          },
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          console.log(data);
-          if (data.error) {
-            return;
-          }
-          return data;
-        });
+    if (!idToken) return;
+    fetch(`${import.meta.env.VITE_SERVER_URL}/api/nonfresher/room-booking`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-Alloc8-IDToken": idToken,
+      },
+      body: JSON.stringify({
+        roomId: roomId,
+        roommateCode: roommateCode ? roommateCode : null,
+      }),
+    }).then((res) => {
+      if (res.status == 200) {
+        navigate("/success");
+      } else {
+        res.json().then((data) => alert(data.error));
+      }
     });
   };
   useEffect(() => {
     updateRooms();
-  }, [floor]);
+  }, [hostel, floor, idToken]);
   const getRoomStatus = (room) => {
     if (room.capacity <= room.numFilled) {
       return "Full";
@@ -508,21 +379,22 @@ const FloorAndRoom = ({
                           <b>Room Number:</b> {room.roomNum}
                         </div>
                       </div>
-                      <div className="text-purple-700 my-5">
-                        <div className="font-semibold">Room Members: </div>
-                        {room.students.length == 0
-                          ? "Empty Until Now"
-                          : room.students.map((stud) => {
-                              return <div key={stud}>{stud}</div>;
-                            })}
-                      </div>
+                      { room.capacity != room.numFilled &&
+                        <div className="text-purple-700 my-5">
+                          <div className="font-semibold">Room Members: </div>
+                          {room.students.length == 0
+                            ? "Empty Until Now"
+                            : room.students.map((stud) => {
+                                return <div key={stud}>{stud}</div>;
+                              })}
+                        </div>
+                      }
                       <div
                         className="my-5"
                         style={{
                           display:
                             getRoomStatus(room) == "Partial" &&
-                            room.roommateCode &&
-                            room.roommateCode.length != 0
+                            !room.codeExpired
                               ? "block"
                               : "none",
                         }}
@@ -553,7 +425,7 @@ const FloorAndRoom = ({
                             getRoomStatus(room) == "Full"
                           }
                         >
-                          Book Room
+                          { getRoomStatus(room) == "Full" ? "Already Booked" : "Book Room" }
                         </Button>
                       </div>
                     </DialogDescription>
@@ -568,50 +440,42 @@ const FloorAndRoom = ({
   );
 };
 const OthersRoomAllocPage = () => {
-  const { accounts, instance } = useMsal();
-  const accessTokenRequest = {
-    account: accounts[0],
-  };
+  const { instance } = useMsal();
+  const [idToken, setIdToken] = useState();
+  const [ name, setName ] = useState();
+  const [ availableRooms, setAvailableRooms ] = useState([]);
+  const request = { scopes: [] };
+
   useEffect(() => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      console.log(res);
+    instance.acquireTokenSilent(request).then(tokenResponse => {
+      setIdToken(tokenResponse.idToken);
+      setName(tokenResponse.idTokenClaims.name);
+      const { batch, gender } = emailmap[tokenResponse.idTokenClaims.email];
+      setAvailableRooms(hostel_data[batch][gender]["hostels"]);
+    }).catch(async (error) => {
+      if (error instanceof InteractionRequiredAuthError) {
+        // fallback to interaction when silent call fails
+        return msalInstance.acquireTokenRedirect(request);
+      } else if (error instanceof BrowserAuthError) {
+        navigate("/");
+        return;
+      }
+
+      // handle other errors
+      console.log(error);
     });
-  }, []);
-  const [available_rooms, setAvailableRooms] = useState({});
+  }, [instance]);
   let [activeStep, setActiveStep] = useState(0);
   const [hostel, setHostel] = useState("");
-  const [studDetails, setStudDetails] = useState({});
   // const [floor, setFloor] = useState(0);
-
-  const fetchAvailableRooms = (details) => {
-    console.log(hostel_data);
-    let floors =
-      hostel_data[details.batch.toLowerCase()][details.gender.toLowerCase()];
-    setAvailableRooms(floors);
-    return floors;
-  };
 
   const getComponent = () => {
     switch (activeStep) {
       case 0:
         return (
-          <Details
-            activeStep={0}
-            onPrev={() => {
-              setActiveStep((a) => a - 1);
-            }}
-            onNext={(data) => {
-              setStudDetails(data);
-              fetchAvailableRooms(data);
-              setActiveStep((a) => a + 1);
-            }}
-          />
-        );
-      case 1:
-        return (
           <Hostel
-            data={available_rooms}
-            activeStep={1}
+            data={availableRooms}
+            activeStep={0}
             onPrev={() => {
               setActiveStep((a) => a - 1);
             }}
@@ -621,28 +485,13 @@ const OthersRoomAllocPage = () => {
             }}
           />
         );
-      // case 2:
-      //   return (
-      //     <Floor
-      //       activeStep={2}
-      //       data={available_rooms[hostel.toLowerCase()]}
-      //       hostel={hostel}
-      //       onPrev={() => {
-      //         setActiveStep((a) => a - 1);
-      //       }}
-      //       onNext={(data) => {
-      //         setFloor(data);
-      //         setActiveStep((a) => a + 1);
-      //       }}
-      //     />
-      //   );
-      case 2:
+      case 1:
         return (
           <FloorAndRoom
-            activeStep={3}
-            data={available_rooms[hostel.toLowerCase()]}
+            activeStep={1}
+            data={availableRooms[hostel.toLowerCase()]}
             hostel={hostel}
-            studDetails={studDetails}
+            idToken={idToken}
             onPrev={() => {
               setActiveStep((a) => a - 1);
             }}
@@ -657,7 +506,7 @@ const OthersRoomAllocPage = () => {
   };
   return (
     <div className="bg-[#f1f5f9] h-full w-full">
-      <Header></Header>
+      <Header name={name}></Header>
       <div style={{ fontFamily: "sans-serif" }} className="bg-[#f1f5f9]">
         <Stepper
           steps={steps}

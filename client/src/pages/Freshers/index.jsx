@@ -13,7 +13,7 @@ import {
 import logo from "../../assets/logo.png";
 import Footer from "@/components/Footer";
 import { useEffect, useState } from "react";
-// import { useNavigate, useLocation, Link } from "react-router-dom";
+// import { useNavigate, useLocation, Link } from "react-router";
 // import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 
 const FreshersRoom = () => {

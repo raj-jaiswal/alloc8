@@ -30,7 +30,7 @@ export default function SmpForm() {
 
   const handleReset = () => {
     instance.acquireTokenSilent(accessTokenRequest).then(res => {
-      fetch("/api/smp/reset-details", {
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/smp/reset-details`, {
         method: "PUT",
         headers: {
           "X-Alloc8-IDToken": res.idToken,
@@ -46,9 +46,9 @@ export default function SmpForm() {
   }
 
   const onSubmit = (formData) => {
-    console.log(formData);
+    // console.log(formData);
     instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch("/api/smp/submit-details", {
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/smp/submit-details`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -57,7 +57,7 @@ export default function SmpForm() {
         },
         body: JSON.stringify(formData),
       }).then((res) => {
-        console.log(res);
+        // console.log(res);
         if (res.status == 201) {
           navigate("/waiting");
         } else {

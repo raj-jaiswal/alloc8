@@ -1,7 +1,7 @@
 const Error = () => {
   return (
     <div className="h-screen w-screen grid place-content-center bg-slate-200 text-black">
-      <div className="w-[500px] max-w-[90vw] p-10 flex flex-col justify-center items-center bg-white rounded-lg">
+      <div className="w-[500px] max-w-[90vw] p-10 flex flex-col justify-center items-center bg-white rounded-lg text-center">
         <h1 className="text-2xl font-bold text-red-700 mb-5">
           Error While Accessing this Page
         </h1>
@@ -12,7 +12,7 @@ const Error = () => {
           </a>{" "}
           and try again.
         </p>
-        <p>If you think this is a mistake contact STC</p>
+        <p>If you think this is a mistake, please contact STC</p>
       </div>
     </div>
   );

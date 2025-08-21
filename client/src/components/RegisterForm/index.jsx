@@ -30,7 +30,7 @@ export default function Registerform() {
   const onSubmit = (formData) => {
     console.log(formData);
     instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch("/api/fresher/submit-details", {
+      fetch(`${import.meta.env.VITE_SERVER_URL}/api/fresher/submit-details`, {
         method: "POST",
         headers: {
           Accept: "application/json",

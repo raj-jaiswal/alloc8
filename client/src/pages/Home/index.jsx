@@ -2,45 +2,51 @@ import { Button } from "@/components/ui/button";
 import msLogo from "../../assets/ms_logo.svg";
 import logo from "../../assets/logo.png";
 import Footer from "@/components/Footer";
-import { useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
+import { useSearchParams } from "react-router";
+
+async function digestMessage(message) {
+  const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+  const hashBuffer = await window.crypto.subtle.digest("SHA-512", msgUint8); // hash the message
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join(""); // convert bytes to hex string
+  return hashHex;
+}
+
 const HomePage = () => {
   const navigate = useNavigate();
 
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts } = useMsal();
   const { search } = useLocation();
-  const query = new URLSearchParams(search);
-  console.log(query.get("pass"));
-  // if (query.get("pass") != "HPBV4") {
-  //   return <>Site under maintenance. Please wait for an official mail</>;
-  // }
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [digestHex, setDigestHex] = useState("");
+
+  useEffect(() => {
+    digestMessage(searchParams.get("pass") || "").then((digestHex) => setDigestHex(digestHex));
+  }, [searchParams]);
 
   useEffect(() => {
     if (isAuthenticated) {
-      let navigated = false;
-      let parts = accounts[0].username.split("_");
-      for (let part of parts) {
-        if ((part.startsWith("24") && !part.startsWith("2421"))
-        || (part.startsWith("23") && !part.startsWith("2321"))
-        || (part.startsWith("22") && !part.startsWith("2221"))) {
-          navigate("/smpform");
-          navigated = true;
-        }
-      }
-      if (!navigated) {
-        navigate("/success");
-      }
+      navigate("/success");
     }
   }, [isAuthenticated]);
+
   const initializeSignIn = () => {
     instance.loginRedirect();
   };
 
+  /* if (digestHex != "ac0d0a66508c239711429e6d05d6068659d9a44beac3a6d718dc0ac33ce11a7cfb8cf7368a0b0078e7aeffcaa9df2679ee14901658839fd0ce6c22e743b46ad2") {
+    return <>Site under maintenance. Please wait for an official mail</>;
+  } */
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-5 bg-gray-200">
-      <div className="w-full max-w-md p-10 pb-20  bg-white rounded-lg shadow-lg flex flex-col items-center border border-gray-300">
+      <div className="w-full max-w-md p-10 pb-20 bg-white rounded-lg shadow-lg flex flex-col items-center border border-gray-300">
         <img
           src={logo}
           alt="ALLOC8 Logo"

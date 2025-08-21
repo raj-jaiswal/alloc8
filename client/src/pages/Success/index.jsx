@@ -6,43 +6,59 @@ import { useNavigate } from "react-router";
 import Footer from "@/components/Footer";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { useMsal } from "@azure/msal-react";
+import { BrowserAuthError, InteractionRequiredAuthError } from "@azure/msal-browser";
+import { useMsal, AuthenticatedTemplate } from "@azure/msal-react";
 
 const SuccessPage = () => {
+  const { instance } = useMsal();
+  const [idToken, setIdToken] = useState();
+  const [idTokenClaims, setIdTokenClaims] = useState();
   const [loading, setLoading] = useState(true);
   const [studData, setStudData] = useState({});
   const navigate = useNavigate();
   const contentRef = useRef();
-  const { accounts, instance } = useMsal();
-
-  const accessTokenRequest = {
-    account: accounts[0],
-  };
+  const request = { scopes: [] };
 
   useEffect(() => {
-    instance.acquireTokenSilent(accessTokenRequest).then((res) => {
-      fetch(
-        "/api/nonfresher/allocated-details?" +
-          new URLSearchParams({
-            rollnum: getRollNumber(),
-          }).toString(),
-        {
-          method: "GET",
-          headers: { "X-Alloc8-IDToken": res.idToken },
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          console.log(data);
-          if (data.error) {
-            navigate("/allotroom");
-            return;
-          }
-          setLoading(false);
-          setStudData(data);
-        });
+    instance.acquireTokenSilent(request).then(tokenResponse => {
+      setIdToken(tokenResponse.idToken);
+      setIdTokenClaims(tokenResponse.idTokenClaims);
+    }).catch(async (error) => {
+      if (error instanceof InteractionRequiredAuthError) {
+        // fallback to interaction when silent call fails
+        return msalInstance.acquireTokenRedirect(request);
+      } else if (error instanceof BrowserAuthError) {
+        navigate("/");
+        return;
+      }
+
+      // handle other errors
+      console.log(error);
     });
-  }, []);
+  }, [instance]);
+
+  useEffect(() => {
+    if (!idToken) return;
+    fetch(
+      `${import.meta.env.VITE_SERVER_URL}/api/nonfresher/allocated-details`,
+      {
+        headers: { "X-Alloc8-IDToken": idToken },
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        // console.log(data);
+        if (data.disabled) {
+          alert("You cannot book room yet. Please wait for an official mail.");
+          navigate("/");
+        } else if (data.error) {
+          navigate("/allotroom");
+          return;
+        }
+        setLoading(false);
+        setStudData(data);
+      })
+  }, [idToken]);
 
   const viewport = document.querySelector("meta[name=viewport]");
   const downloadPDF = () => {
@@ -64,7 +80,7 @@ const SuccessPage = () => {
 
   return (
     <div className="bg-[#f1f5f9] h-full w-full">
-      <Header></Header>
+      <Header name={getName(idTokenClaims)}></Header>
       <Spinner loading={loading}></Spinner>
 
       <div
@@ -110,10 +126,10 @@ const SuccessPage = () => {
             room are as follows -
             <div className="p-5 text-xl font-mono border-2 my-5 capitalize">
               <div>
-                <b>Name: </b> {getName()}
+                <b>Name: </b> <AuthenticatedTemplate>{getName(idTokenClaims)}</AuthenticatedTemplate>
               </div>
               <div>
-                <b>Roll No.: </b> {getRollNumber().toUpperCase()}
+                <b>Roll No.: </b> <AuthenticatedTemplate>{getRollNumber(idTokenClaims).toUpperCase()}</AuthenticatedTemplate>
               </div>
               <div>
                 <b>Hostel: </b> {studData?.hostel}

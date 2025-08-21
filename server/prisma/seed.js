@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
-import available_rooms from "../../data-gen/available_rooms.json" assert { type: "json" };
+import available_rooms from "../../data-gen/available_rooms.json" with { type: "json" };
 
 async function main() {}
 
@@ -9,82 +9,38 @@ main()
     const data = new Set();
     for (let batch in available_rooms) {
       for (let gender in available_rooms[batch]) {
-        for (let hostel in available_rooms[batch][gender]) {
-          console.log("adding for", batch, gender, hostel);
-          for (let floor in available_rooms[batch][gender][hostel]) {
-            for (let room of available_rooms[batch][gender][hostel][floor]) {
-              let hardcodedBatch = null;
-              let capacity = 2;
-              if (hostel.startsWith("asima") && batch == "btech23") {
-                capacity = 3;
+        const capacity = available_rooms[batch][gender]["capacity"];
+        for (let hostel in available_rooms[batch][gender]["hostels"]) {
+          console.log("adding for", batch, gender, hostel, capacity);
+          for (let block in available_rooms[batch][gender]["hostels"][hostel]) {
+            for (let roomsRange of available_rooms[batch][gender]["hostels"][hostel][block]) {
+              roomsRange = roomsRange.split("-");
+              /* If floor is not same */
+              if (roomsRange[0][0] !== roomsRange[1][0]) {
+                throw new Error(`Both ends of the room range ${roomsRange[0]}-${roomsRange[1]} have different floors`);
               }
-              if (batch == "btech21") {
-                capacity = 1;
+              const floor = roomsRange[0][0];
+              const low = parseInt(roomsRange[0]);
+              const high = parseInt(roomsRange[1]);
+              for (let room = low; room <= high; room++) {
+                console.log(
+                  `${hostel}${block}-${room.toString().padStart(3, "0")}-${batch}`
+                );
+                data.add(
+                  {
+                    hostel,
+                    block,
+                    gender,
+                    floor,
+                    roomNum: `${room.toString().padStart(3, "0")}`,
+                    batch,
+                    capacity,
+                    occupancy: 0,
+                    students: [],
+                    roommateCode: null,
+                  }
+                );
               }
-              if (
-                [
-                  "phd14",
-                  "phd15",
-                  "phd16",
-                  "phd17",
-                  "phd18",
-                  "phd19",
-                  "phd20",
-                  "phd21",
-                ].includes(batch) ||
-                (batch == "phd21" && gender == "male")
-              ) {
-                capacity = 1;
-                hardcodedBatch = "phd14to20male";
-              }
-
-              if (
-                [
-                  "phd17",
-                  "phd18",
-                  "phd19",
-                  "phd20",
-                  "phd21",
-                  "phd22",
-                  "phd23",
-                ].includes(batch) &&
-                gender == "female"
-              ) {
-                capacity = 1;
-                hardcodedBatch = "phd17to23female";
-              }
-
-              //   console.log(
-              //     `${hostel}-${
-              //       floor.toString() + room.toString().padStart(2, "0")
-              //     }`
-              //   );
-              // ids.push(
-              //   `${hostel}-${
-              //     floor.toString() + room.toString().padStart(2, "0")
-              //   }-${batch}`
-              // );
-              console.log(
-                `${hostel}-${room.toString().padStart(3, "0")}-${
-                  hardcodedBatch || batch
-                }`
-              );
-              data.add(
-                JSON.stringify({
-                  roomId: `${hostel}-${room.toString().padStart(3, "0")}-${
-                    hardcodedBatch || batch
-                  }`,
-                  hostel,
-                  gender,
-                  floor,
-                  roomNum: room.toString().padStart(3, "0"),
-                  batch: hardcodedBatch || batch,
-                  capacity,
-                  numFilled: 0,
-                  students: [],
-                  roommateCode: "",
-                })
-              );
             }
           }
         }
@@ -107,9 +63,9 @@ main()
     const finalData = [];
     const ids = [];
     for (const x of data) {
-      console.log(JSON.parse(x).roomId);
-      ids.push(JSON.parse(x).roomId);
-      finalData.push(JSON.parse(x));
+      console.log(x);
+      ids.push(x);
+      finalData.push(x);
     }
     console.log(
       "duplicate IDs",
@@ -126,3 +82,4 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+/* vi: set et sw=2: */

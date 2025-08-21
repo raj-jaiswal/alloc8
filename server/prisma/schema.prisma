@@ -20,6 +20,8 @@ model rooms {
   students String[]
   roommateCode    String? @db.String
   codeGeneratedAt DateTime?
+
+  @@index([batch, gender, hostel, floor])
 }
 
 model students {
@@ -33,6 +35,8 @@ model students {
   occupancy Int
   gender String 
   batch String
+
+  @@index([hostel, roomnum])
 }
 
 model fresherDetails {
@@ -49,7 +53,7 @@ model fresherDetails {
   sleep String
 }
 
-model smpDetails{
+model smpDetails {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   rollnum String @unique
   branch String
