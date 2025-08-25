@@ -35,7 +35,7 @@ router.use(async (req, res, next) => {
     for (let part of parts) {
       if ((part.startsWith("24") && !part.startsWith("2421"))
         || (part.startsWith("23") && !part.startsWith("2321"))
-        || (part.startsWith("22") && !part.startsWith("2221"))) {
+        || (part.startsWith("25") && !part.startsWith("2521"))) {
         next();
         return;
       }

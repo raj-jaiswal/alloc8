@@ -35,7 +35,7 @@ export default function Radio_Section({ label, label_id, options, control }) {
 
 
                 {options.map((option, idx) =>
-                  <label>
+                  <label key={idx}>
                     <FormLabel
                       key={idx}
                       className="border-0 p-0 flex items-center has-[[data-state=checked]]:border-primary"

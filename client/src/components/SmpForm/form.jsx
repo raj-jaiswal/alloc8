@@ -21,7 +21,8 @@ import Checkbox_Section from "./checkbox_group";
 import Radio_Section from "./radio_group";
 import Dropdown_Section from "./dropdown_group";
 import { getName, getRollNumber } from "@/lib/auth_utility";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
 
 export default function SMP_Form({ idTokenClaims, submitAction }) {
@@ -48,18 +49,17 @@ export default function SMP_Form({ idTokenClaims, submitAction }) {
     {
       label: "Branch",
       label_id: "branch",
-      options: data["branches"],
+      options: data["branch_index"].map(b => b.name),
       multiple: false
-    },
-    {
-      label: "Language",
-      label_id: "language",
-      options: data["languages"],
-      multiple: true
     },
   ]
 
   const checkbox_sections = [
+    {
+      label: "Languages",
+      label_id: "languages",
+      options: data["languages"],
+    },
     {
       label: "Tech Interests",
       label_id: "tech_interests",
@@ -82,10 +82,12 @@ export default function SMP_Form({ idTokenClaims, submitAction }) {
     },
   ];
 
-
+  const navigate = useNavigate()
+  const [roll, setRoll] = useState()
+  const [isFresher, setIsFresher] = useState(false)
 
   const radioSchemaObj = radio_sections
-    .map(section => ({ [section.label_id]: (z.string()) }))
+    .map(section => (section.label_id == 'active_sem' ? { [section.label_id]: (z.string().optional()) } : { [section.label_id]: (z.string()) }))
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});
   // const dropdownSchemaObj = dropdown_sections
   //   .map(section => ({ [section.label_id]: (z.string()) }))
@@ -95,14 +97,17 @@ export default function SMP_Form({ idTokenClaims, submitAction }) {
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});
   const formSchema = z.object({
     branch: z.string(),
-    language: z.array(z.string()),
+    //language: z.array(z.string()),
     // ...dropdownSchemaObj,
     ...radioSchemaObj,
     ...checkboxSchemaObj,
   });
-
+  let branch_code;
   const form = useForm({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      "branch": "Computer Science and Engineering"
+    }
   });
 
   function onSubmit(values) {
@@ -113,10 +118,26 @@ export default function SMP_Form({ idTokenClaims, submitAction }) {
     form.reset();
     form.clearErrors();
   }
-  let isFresher = true;
   useEffect(() => {
-    isFresher = getRollNumber(idTokenClaims)[1] == '5'
-    console.log(isFresher)
+    async function run() {
+      const regex = /^2[3-5]0[1-3].{4}$/;
+      const roll = getRollNumber(idTokenClaims)
+      if (!roll) return;
+      if (!regex.test(roll)) {
+        // redirect to login
+        console.error("Invalid user")
+        navigate("/error")
+      }
+      setIsFresher(roll[1] == '5')
+      branch_code = roll.slice(4, 6);
+      console.log(branch_code)
+      const branchName = data['branch_index'].filter(b => b.code.toLowerCase() == branch_code.toLowerCase())[0].name
+      console.log(branchName)
+      form.reset({
+        branch: branchName
+      });
+    }
+    run()
   }, [idTokenClaims])
 
   return (
@@ -132,11 +153,15 @@ export default function SMP_Form({ idTokenClaims, submitAction }) {
             <Dropdown_Section key={idx} label={section.label} label_id={section.label_id} options={section.options} control={form.control} multiple={section.multiple} />
           )}
 
-          {radio_sections.map((section, idx) => {
-            {/*TODO: Fix conditional render for freshers' active sem*/ }
-            return (!isFresher && section.label_id === 'active_sem') ? <></> :
-              <Radio_Section key={idx} label={section.label} label_id={section.label_id} options={section.options} control={form.control} />
-          })
+          {
+            isFresher ?
+              radio_sections.map((section, idx) => {
+                return <Radio_Section key={idx} label={section.label} label_id={section.label_id} options={section.options} control={form.control} />
+              })
+              :
+              radio_sections.filter(section => !(section.label_id == 'active_sem')).map((section, idx) => {
+                return <Radio_Section key={idx} label={section.label} label_id={section.label_id} options={section.options} control={form.control} />
+              })
           }
 
 
