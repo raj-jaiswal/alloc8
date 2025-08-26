@@ -71,7 +71,7 @@ const SMPPage = () => {
   const submit = async (values) => {
     console.log(values)
     instance.acquireTokenSilent(accessTokenRequest).then(res => {
-      fetch(`http://localhost:8500/api/smp/submit`, {
+      fetch(`${import.meta.env.VITE_SERVER_URL || "http://localhost:8500"}/api/smp/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,10 @@ const SMPPage = () => {
       }).then(res => {
         if (res.status == 200) {
           alert("Submitted successfully");
+        } else if (res.status == 400) {
+          alert('You have already submitted before!')
         } else {
+          console.log(res)
           alert("Error in submission");
         }
       });
