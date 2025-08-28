@@ -105,6 +105,15 @@ async function submitDetails(req, res) {
   try {
     //TODO: prisma create
     //TODO: verify token 
+    const student = await prisma.smpDetails.findUnique({
+      where: { rollnum: rollnum },
+    });
+
+    if (student) {
+      return res.status(400).json({
+        error: "You have already submitted!",
+      });
+    }
     const smpDetail = await prisma.smpDetails.create({
       data: {
         ...body,
