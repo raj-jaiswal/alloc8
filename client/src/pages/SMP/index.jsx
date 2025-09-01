@@ -47,31 +47,6 @@ const SMPPage = () => {
     });
   }, [instance]);
 
-  useEffect(() => {
-    if (!idToken) return;
-    fetch(
-      `${import.meta.env.VITE_SERVER_URL}/api/nonfresher/allocated-details`,
-      {
-        headers: { "X-Alloc8-IDToken": idToken },
-      }
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        // console.log(data);
-        if (data.disabled) {
-          alert("You cannot book room yet. Please wait for an official mail.");
-          navigate("/");
-        } else if (data.error) {
-          navigate("/allotroom");
-          return;
-        }
-        setLoading(false);
-        setStudData(data);
-        console.log(data);
-      })
-
-  }, [idToken]);
-
   // check if student already submitted
   useEffect(() => {
     if (!idToken) return;
