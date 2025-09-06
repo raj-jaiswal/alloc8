@@ -173,6 +173,28 @@ for branch in branches:
             distances = pairwise_distances(points_in_cluster)
             pairwise_distances_list.append(np.sum(np.triu(distances, 1)))
 
+    # compute WCSS (within-cluster sum of squared distances to center) per local cluster
+    wcss_list = []
+    for cid in range(num_clusters):
+        mask = (cluster_labels == cid)
+        members = X_mat[mask]
+        if members.shape[0] == 0:
+            wcss_c = 0.0
+        else:
+            diff = members - centers[cid]  # same feature space as kmeans
+            wcss_c = np.sum(np.square(diff))
+        wcss_list.append(float(wcss_c))
+
+    # normalize WCSS to [0,1] by dividing by max WCSS within this branch (avoid division by zero)
+    max_wcss = max(wcss_list) if len(wcss_list) > 0 else 0.0
+    if max_wcss > 0:
+        wcss_norm = [w / max_wcss for w in wcss_list]
+    else:
+        wcss_norm = [1.0 for _ in wcss_list]
+
+    # score as (1 - normalized_wcss) * 100
+    scores = [(1.0 - wn) * 100.0 for wn in wcss_norm]
+
     # compute clusters and assign a unique global cluster ID per cluster
     if not isinstance(X, pd.DataFrame):
         X = pd.DataFrame(X, columns=[f"f_{i}" for i in range(X.shape[1])])
@@ -193,7 +215,7 @@ for branch in branches:
     cols_to_skip = [c for c in X.columns if "Phys/Chem Sem" in c]
 
     means = []
-    for label in clusters:
+    for idx_in_list, label in enumerate(clusters):
         mask = (cluster_labels == label)
         if mask.sum() == 0:
             mean_row = pd.Series([np.nan] * X.shape[1], index=X.columns)
@@ -204,6 +226,9 @@ for branch in branches:
         row_dict["Branch"] = branch
         # use global id here
         row_dict["Cluster"] = int(cluster_mapping[int(label)])
+        # add score corresponding to this local cluster label
+        local_index = clusters.index(label)
+        row_dict["score"] = scores[local_index]
         means.append(pd.Series(row_dict))
 
     cluster_means_df = pd.DataFrame(means)
@@ -228,7 +253,8 @@ df_seniors = pd.read_json("data/smp_2nd_years.json")
 
 # read cluster means produced above
 cluster_means_all = pd.read_csv("data/smp_cluster_feature_means.csv")
-cluster_cols = [c for c in cluster_means_all.columns if c not in ("Cluster", "Branch")]
+# ensure we ignore the score column when selecting feature columns for matching seniors
+cluster_cols = [c for c in cluster_means_all.columns if c not in ("Cluster", "Branch", "score")]
 
 k = 2  # seniors per cluster limit
 all_senior_assignments = []
@@ -296,7 +322,8 @@ for branch in branches_s:
         skipped_seniors.extend(list(df_b["Roll"].astype(str).values))
         continue
 
-    cluster_cols = [c for c in cluster_means_branch.columns if c not in ("Cluster", "Branch")]
+    # ignore score when selecting columns for matching seniors
+    cluster_cols = [c for c in cluster_means_branch.columns if c not in ("Cluster", "Branch", "score")]
 
     missing_cols = [c for c in cluster_cols if c not in Xs.columns]
     if missing_cols:
