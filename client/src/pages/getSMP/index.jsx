@@ -111,7 +111,7 @@ export default function GetSMP() {
   }
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm max-w-3xl mx-auto md:my-16 md:px-12 px-4">
+    ( clusterData ? <div className="bg-white p-4 rounded-lg shadow-sm max-w-3xl mx-auto md:my-16 md:px-12 px-4">
       <div className="flex justify-center mb-6">
         <img src="/SMP.svg" className="w-[25rem] p-12" alt="Logo" />
       </div>
@@ -139,6 +139,10 @@ export default function GetSMP() {
             </div>
           ))}
       </div>
-    </div>
+    </div> : 
+      <div className="flex justify-center text-center p-4 items-center text-xl text-black min-h-screen">
+        <div>You Have Not Been Alloted Any Cluster. This may be due to large number of SMP 2nd years in your branch. </div>
+      </div>
+    )
   );
 }
