@@ -1,5 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+import path from "path";
+import fs from "fs/promises";            // modern promise-based fs
+import { fileURLToPath } from "url";     // to get __dirname in ESM
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function getRollNumber(preferred_username) {
   const mailParts = preferred_username.split("@")[0].split("_");
@@ -166,6 +172,9 @@ async function submitDetails(req, res) {
 
 async function getCluster(req, res) {
   const rollnum = getRollNumber(req.auth.preferred_username);
+  const token = req.headers['X-Alloc8-IDToken']
+  const body = req.body;
+  const name = req.auth.name
 
   function normalizeRoll(r) {
     if (r === null || r === undefined) return "";

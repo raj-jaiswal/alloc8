@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getName, getRollNumber } from "@/lib/auth_utility";
 import { useMsal } from "@azure/msal-react";
 import { BrowserAuthError, InteractionRequiredAuthError } from "@azure/msal-browser";
@@ -101,37 +101,44 @@ export default function GetSMP() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessTokenRequest.account, instance, idToken]);
 
-  // UI for testing <To Be changed>
+  // UI for testing
   if (loadingToken) {
-    return <div>Acquiring token…</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding: 12 }}>
+    <div className="bg-white p-4 rounded-lg shadow-sm max-w-3xl mx-auto md:my-16 md:px-12 px-4">
+      <div className="flex justify-center mb-6">
+        <img src="/SMP.svg" className="w-[25rem] p-12" alt="Logo" />
+      </div>
+
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="px-4 m-0 text-xl text-gray-900 font-medium">SMP Members</h3>
+        <h3 className="px-4 m-0 text-md text-gray-600 font-medium">Similarity: {parseInt(clusterData?.cluster?.score)}%</h3>
+      </div>
+
       <div>
-        <strong>{getName(idTokenClaims) || "User"}</strong> — {getRollNumber(idTokenClaims) || ""}
+        {[...(clusterData?.cluster?.members ?? [])]
+          .sort((a, b) => {
+            const ka = parseInt((a.roll || "0000").slice(0, 4), 10) || 0;
+            const kb = parseInt((b.roll || "0000").slice(0, 4), 10) || 0;
+            if (ka !== kb) return ka - kb;
+            return String(a.roll).localeCompare(String(b.roll));
+          })
+          .map((m) => (
+            <div
+              key={m.roll}
+              className={ `block w-full p-4 border border-gray-200 rounded-lg mb-2 ${m.roll[1] == 3 ? 'bg-blue-400' : m.roll[1] == 4 ? 'bg-blue-200' : 'bg-white'}` }
+            >
+              <div className="text-sm font-semibold text-gray-900">{m.name}</div>
+              <div className="text-sm text-gray-600 mt-1">{m.roll.toUpperCase()}</div>
+            </div>
+          ))}
       </div>
-
-      <div style={{ marginTop: 12 }}>
-        <button onClick={fetchCluster} disabled={loadingCluster || !accessTokenRequest.account}>
-          {loadingCluster ? "Loading…" : "Get Cluster"}
-        </button>
-      </div>
-
-      {error && (
-        <div style={{ color: "red", marginTop: 12 }}>
-          Error: {error}
-        </div>
-      )}
-
-      {clusterData && (
-        <div style={{ marginTop: 12 }}>
-          <h4>Cluster response:</h4>
-          <pre style={{ whiteSpace: "pre-wrap", maxHeight: "60vh", overflow: "auto" }}>
-            {JSON.stringify(clusterData, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }

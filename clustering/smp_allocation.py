@@ -193,7 +193,7 @@ for branch in branches:
         wcss_norm = [1.0 for _ in wcss_list]
 
     # score as (1 - normalized_wcss) * 100
-    scores = [(1.0 - wn) * 100.0 for wn in wcss_norm]
+    scores = [(75 + (1.0 - wn) * 25.0) for wn in wcss_norm]
 
     # compute clusters and assign a unique global cluster ID per cluster
     if not isinstance(X, pd.DataFrame):
